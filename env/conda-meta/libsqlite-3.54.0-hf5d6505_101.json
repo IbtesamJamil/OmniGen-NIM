@@ -1,0 +1,75 @@
+{
+  "name": "libsqlite",
+  "version": "3.54.0",
+  "build": "hf5d6505_101",
+  "build_number": 101,
+  "channel": "https://conda.anaconda.org/conda-forge/win-64",
+  "subdir": "win-64",
+  "fn": "libsqlite-3.54.0-hf5d6505_101.conda",
+  "md5": "d21c450f59e7c9d130ddd68cdbd6ac40",
+  "url": "https://conda.anaconda.org/conda-forge/win-64/libsqlite-3.54.0-hf5d6505_101.conda",
+  "sha256": "210405f21c300e72287281979bbb4be8a7aeb5f31329b8afffc6a1a2cae67427",
+  "depends": [
+    "ucrt >=10.0.20348.0",
+    "vc >=14.3,<15",
+    "vc14_runtime >=14.44.35208"
+  ],
+  "constrains": [],
+  "license": "blessing",
+  "timestamp": 1791584300951,
+  "size": 1332874,
+  "_requested_specs": [],
+  "package_tarball_full_path": "D:\\Miniconda\\pkgs\\libsqlite-3.54.0-hf5d6505_101.conda",
+  "extracted_package_dir": "D:\\Miniconda\\pkgs\\libsqlite-3.54.0-hf5d6505_101",
+  "files": [
+    "Library/bin/sqlite3.dll",
+    "Library/include/sqlite3.h",
+    "Library/include/sqlite3ext.h",
+    "Library/lib/pkgconfig/sqlite3.pc",
+    "Library/lib/sqlite3.lib"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "Library/bin/sqlite3.dll",
+        "path_type": "hardlink",
+        "sha256": "aa42d12130f9962d81fae4e655d20e760759d2c8551b44817f7c3181a7307cb1",
+        "size_in_bytes": 3282432,
+        "sha256_in_prefix": "aa42d12130f9962d81fae4e655d20e760759d2c8551b44817f7c3181a7307cb1"
+      },
+      {
+        "_path": "Library/include/sqlite3.h",
+        "path_type": "hardlink",
+        "sha256": "cd20a2877bc82b94e36c1093b727dd87cfa3c1d581aac6e240925535cbd90166",
+        "size_in_bytes": 695737,
+        "sha256_in_prefix": "cd20a2877bc82b94e36c1093b727dd87cfa3c1d581aac6e240925535cbd90166"
+      },
+      {
+        "_path": "Library/include/sqlite3ext.h",
+        "path_type": "hardlink",
+        "sha256": "48963abfefb41ac329ef9d706acb5eadba952a99a748285c9ded6b5e0942721b",
+        "size_in_bytes": 39547,
+        "sha256_in_prefix": "48963abfefb41ac329ef9d706acb5eadba952a99a748285c9ded6b5e0942721b"
+      },
+      {
+        "_path": "Library/lib/pkgconfig/sqlite3.pc",
+        "path_type": "hardlink",
+        "sha256": "fda2b317fe5d487a199c3fddab7482f9299827a8483d96d1e8b1a1ffe083de51",
+        "size_in_bytes": 270,
+        "sha256_in_prefix": "fda2b317fe5d487a199c3fddab7482f9299827a8483d96d1e8b1a1ffe083de51"
+      },
+      {
+        "_path": "Library/lib/sqlite3.lib",
+        "path_type": "hardlink",
+        "sha256": "d1c9e7d0a31103ce15b9fc89eda25cf3f79866e012c447c003337fcf9bcc1671",
+        "size_in_bytes": 85492,
+        "sha256_in_prefix": "d1c9e7d0a31103ce15b9fc89eda25cf3f79866e012c447c003337fcf9bcc1671"
+      }
+    ]
+  },
+  "link": {
+    "source": "D:\\Miniconda\\pkgs\\libsqlite-3.54.0-hf5d6505_101",
+    "type": 1
+  }
+}

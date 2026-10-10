@@ -1,0 +1,9 @@
+genome_build: "hg38"
+random_seed: 42
+
+acmg_thresholds:
+  gnomad_ba1_af: 0.05
+  gnomad_bs1_af: 0.005
+  gnomad_pm2_af: 0.0001
+  evo2_damaging_p_val: -18.5
+  evo2_benign_p_val: -5.2
