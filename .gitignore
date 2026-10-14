@@ -1,0 +1,14 @@
+# Environments
+env/
+venv/
+*.env
+
+# Cache files
+__pycache__/
+*.pyc
+data/alphafold_cache/
+
+# System / IDE files
+.DS_Store
+.vscode/
+.idea/
