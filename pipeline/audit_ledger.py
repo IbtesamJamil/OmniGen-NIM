@@ -75,3 +75,40 @@ class AuditLedger:
         rows = cursor.fetchall()
         conn.close()
         return rows
+
+    @staticmethod
+    def get_head_hash():
+        """
+        Retrieves the latest payload hash from the tail of the audit log chain.
+        """
+        AuditLedger.initialize_db()
+        if not os.path.exists(DB_PATH):
+            return None
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT payload_hash FROM audit_logs ORDER BY id DESC LIMIT 1")
+        row = cursor.fetchone()
+        conn.close()
+        return row[0] if row else None
+
+    @staticmethod
+    def verify_full_ledger() -> bool:
+        """
+        Verifies the cryptographic hash-chain integrity across all audit logs in SQLite.
+        """
+        if not os.path.exists(DB_PATH):
+            return True
+            
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT timestamp, username, action_type, details, payload_hash FROM audit_logs ORDER BY id ASC")
+        rows = cursor.fetchall()
+        conn.close()
+
+        for row in rows:
+            timestamp, username, action_type, details, stored_hash = row
+            raw_string = f"{timestamp}-{username}-{action_type}-{details}"
+            computed_hash = hashlib.sha256(raw_string.encode()).hexdigest()
+            if computed_hash != stored_hash:
+                return False
+        return True

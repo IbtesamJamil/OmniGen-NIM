@@ -1,33 +1,30 @@
-# Environments
-env/
+# Environment & API keys
+.env
+*.env
+.env.*
+
+# Python Virtual Environments
 venv/
 venv_clean/
-*.env
-!.env.example
+env/
+ENV/
+.venv/
 
-# Cache files
-__pycache__/
-*.pyc
-*.py[cod]
-*$py.class
-data/alphafold_cache/
-.cache/
-
-# Databases & Audit Logs
+# SQLite Audit Ledgers & Local Databases
+*.db
 *.sqlite
 *.sqlite3
-*.db
-celery_sqlite.db
-audit_ledger.db
-/tmp/celery_sqlite.db
 
-# Celery & Background Artefacts
-celerybeat-schedule
-celerybeat.pid
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
 
-# System / IDE files
+# Streamlit / OS artifacts
+.streamlit/secrets.toml
 .DS_Store
-.vscode/
-.idea/
-*.swp
-*.swo
+Thumbs.db
+downloads/

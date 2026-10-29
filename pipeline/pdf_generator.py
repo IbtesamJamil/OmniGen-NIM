@@ -9,14 +9,14 @@ from pipeline.audit_ledger import DB_PATH, AuditLedger
 
 class PDFReportGenerator:
     """
-    Generates professional research prototype reports with verified stamps,
+    Generates professional research prototype variant reports with verified stamps,
     guardrail metrics, and tamper-evident SHA-256 hash-chaining ledger traceability.
     For research use only.
     """
     @staticmethod
     def generate_report(output_filename: str, variant_data: dict, audit_details: str):
         """
-        Generates a professional research prototype PDF report.
+        Generates a professional research prototype PDF report with ledger head hash printing.
         """
         doc = SimpleDocTemplate(output_filename, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
         story = []
@@ -54,19 +54,19 @@ class PDFReportGenerator:
         )
 
         # Header Section
-        story.append(Paragraph("OmniGen-NIM: Bioinformatics Variant Analysis Report", title_style))
+        story.append(Paragraph("OmniGen-NIM: Genomic Variant Analysis Report", title_style))
         story.append(Paragraph("<b>RESEARCH PROTOTYPE — FOR RESEARCH USE ONLY.</b> Not validated for clinical diagnostic use. Powered by Nebius Token Factory & Ensembl VEP Ground-Truth.", disclaimer_style))
         story.append(Spacer(1, 5))
 
         # Variant Summary Table
         story.append(Paragraph("1. Variant Information & Ground Truth", section_style))
         table_data = [
-            ["Gene / HGVS", variant_data.get("hgvs", "N/A")],
+            ["Gene / HGVS", variant_data.get("hgvs", variant_data.get("HGVS", "N/A"))],
             ["Protein Change", variant_data.get("protein_change", "N/A")],
-            ["Domain / Residue", f"{variant_data.get('domain', 'N/A')} (Residue {variant_data.get('residue_number', 'N/A')})"],
-            ["Stability Proxy (ΔΔG)", f"{variant_data.get('stability_proxy_delta_g', 'N/A')} kcal/mol"],
-            ["AlphaFold pLDDT Confidence", f"{variant_data.get('plddt_score', 'N/A')} / 100 [VERIFIED STAMP]"],
-            ["Clinical Classification", variant_data.get("classification", "N/A")]
+            ["Domain / Residue", f"{variant_data.get('domain', 'N/A')} (Residue {variant_data.get('residue_number', variant_data.get('Residue', 'N/A'))})"],
+            ["Estimated Stability Shift (ΔΔG)", f"{variant_data.get('stability_proxy_delta_g', variant_data.get('DeltaDeltaG_kcal_mol', 'N/A'))} kcal/mol (heuristic estimate)"],
+            ["AlphaFold pLDDT Confidence", f"{variant_data.get('plddt_score', variant_data.get('pLDDT', 'N/A'))} / 100 [VERIFIED STAMP]"],
+            ["Clinical Classification", variant_data.get("classification", variant_data.get("Stability_Status", "N/A"))]
         ]
         
         t = Table(table_data, colWidths=[180, 360])
@@ -89,7 +89,7 @@ class PDFReportGenerator:
         story.append(Paragraph("<b>Numerical Guardrail Status:</b> Passed all coordinate and stability boundary checks.", body_style))
         story.append(Spacer(1, 15))
 
-        # Audit Ledger Lineage
+        # Audit Ledger Lineage & Head Hash printing
         story.append(Paragraph("3. Tamper-Evident Ledger Lineage", section_style))
         story.append(Paragraph(f"<b>Ledger Record ID:</b> {variant_data.get('audit_id', 'N/A')}", body_style))
         

@@ -4,14 +4,31 @@ import json
 from typing import List, Dict
 
 class Evo2BatchScorer:
-    """Simulates batch variant scoring using Evo2 genomic foundation model pipeline."""
+    """
+    Evo2BatchScorer - Heuristic Batch Scoring Simulation Wrapper
+    ------------------------------------------------------------
+    RESEARCH PROTOTYPE COMPONENT:
+    This class performs local deterministic batch variant scoring using a lightweight 
+    substitution and positional heuristic proxy (evaluating reference/alternate lengths 
+    and coordinate modulo) to simulate downstream genomic foundation model scoring 
+    behavior during offline testing and pipeline validation.
+    """
 
     def __init__(self, output_dir: str = "data/scores"):
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
 
     def score_vcf_batch(self, variants: List[Dict]) -> str:
-        """Processes a batch of VCF variants and computes pathogenicity scores."""
+        """
+        Processes a batch of VCF variants and computes pathogenicity proxy scores 
+        via deterministic length and coordinate heuristics.
+        
+        Args:
+            variants (List[Dict]): List of parsed variant dictionaries.
+            
+        Returns:
+            str: Path to the generated JSON results file.
+        """
         start_time = time.time()
         results = []
 
@@ -20,7 +37,7 @@ class Evo2BatchScorer:
             ref = variant.get("ref", "")
             alt = variant.get("alt", "")
             
-            # Simple score calculation based on substitution
+            # Deterministic heuristic proxy score calculation based on substitution and position
             score = round((len(ref) + len(alt) + pos % 10) / 15.0, 4)
             
             results.append({
@@ -39,7 +56,8 @@ class Evo2BatchScorer:
             "metadata": {
                 "total_variants": len(variants),
                 "execution_time_seconds": elapsed_time,
-                "throughput_vps": round(len(variants) / (elapsed_time + 1e-6), 2)
+                "throughput_vps": round(len(variants) / (elapsed_time + 1e-6), 2),
+                "scoring_mode": "Heuristic Proxy Simulation (Research Prototype)"
             },
             "results": results
         }
@@ -59,4 +77,4 @@ if __name__ == "__main__":
     ]
     
     out_path = scorer.score_vcf_batch(sample_variants)
-    print(f"[SUCCESS] Batch VCF scoring complete. Output saved to: {out_path}")
+    print(f"[SUCCESS] Batch VCF heuristic scoring complete. Output saved to: {out_path}")

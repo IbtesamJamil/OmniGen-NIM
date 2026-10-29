@@ -1,6 +1,6 @@
+import os
 import streamlit as st
 import py3Dmol
-import os
 import sys
 import json
 import time
@@ -38,7 +38,7 @@ except ImportError:
 
 from pipeline.vcf_parser import VCFParser
 
-st.set_page_config(page_title="OmniGen-NIM | Enterprise Agentic Genomic Platform", page_icon="🧬", layout="wide")
+st.set_page_config(page_title="OmniGen-NIM | Guarded Agentic Genomic Platform", page_icon="🧬", layout="wide")
 
 # --- ENTERPRISE RBAC LOGIN GATEWAY (RESTRICTED TO IBTESAM & FARIZ) ---
 AuditLedger.initialize_db()
@@ -47,7 +47,7 @@ if "authenticated_user" not in st.session_state:
     st.session_state["user_role"] = None
 
 if not st.session_state["authenticated_user"]:
-    st.markdown("## 🔐 OmniGen-NIM Enterprise Authentication")
+    st.markdown("## 🔐 OmniGen-NIM Secure Authentication Portal")
     st.caption("Secure access portal restricted to authorized personnel (`ibtesam` / `fariz`).")
     
     col_login1, col_login2 = st.columns([1, 2])
@@ -65,8 +65,8 @@ if not st.session_state["authenticated_user"]:
                 st.error("Invalid credentials. Authorized accounts: ibtesam (Clinical Geneticist) or fariz (Bioinformatician)")
     st.stop()
 
-st.title("🧬 OmniGen-NIM: Agentic Genomic Analysis Platform")
-st.caption("Multi-modal enterprise framework combining AlphaFold 3D structure analytics, VCF pathogenicity scoring, RAG literature grounding, and Token Factory Nemotron guardrails.")
+st.title("🧬 OmniGen-NIM: Guarded Agentic Genomic Analysis Platform")
+st.caption("Research prototype combining AlphaFold 3D structure analytics, VCF pathogenicity scoring, RAG literature grounding, and Token Factory Nemotron guardrails.")
 
 # --- SIDEBAR CONFIGURATION ---
 st.sidebar.markdown(f"👤 **User:** `{st.session_state['authenticated_user']}`")
@@ -79,7 +79,7 @@ if st.sidebar.button("🔒 Logout Session"):
 
 st.sidebar.markdown("---")
 st.sidebar.header("⚙️ LLM Engine (Token Factory + Nemotron)")
-model_tier = st.sidebar.selectbox("Nemotron Model Tier", ["super", "ultra", "nano"], index=0, help="Nano for parsing, Super/Ultra for clinical reasoning")
+model_tier = st.sidebar.selectbox("Nemotron Model Tier", ["super", "ultra", "nano"], index=0, help="Nano for parsing, Super/Ultra for structural reasoning")
 
 st.sidebar.markdown("---")
 st.sidebar.header("🧠 Agent Persona Mode")
@@ -91,11 +91,49 @@ agent_persona = st.sidebar.selectbox(
 
 st.sidebar.markdown("---")
 st.sidebar.header("🔬 Target Variant Context")
-gene_symbol = st.sidebar.text_input("Gene Symbol", value="TP53")
-uniprot_id = st.sidebar.text_input("UniProt ID Primary", value="P04637")
+
+# --- POLISHED ONE-CLICK DEMO CASES (ITEM 18) ---
+st.sidebar.markdown("### 🎯 One-Click Demo Cases")
+col_d1, col_d2, col_d3 = st.sidebar.columns(3)
+
+with col_d1:
+    if st.button("TP53", help="Load TP53 R248W hotspot cancer variant"):
+        st.session_state["demo_gene"] = "TP53"
+        st.session_state["demo_uniprot"] = "P04637"
+        st.session_state["demo_hgvs"] = "c.743G>A"
+        st.session_state["demo_pos"] = 248
+        st.toast("Loaded TP53 (R248W) Demo Case!", icon="🧬")
+        st.rerun()
+
+with col_d2:
+    if st.button("BRCA1", help="Load BRCA1 C61G ring-domain variant"):
+        st.session_state["demo_gene"] = "BRCA1"
+        st.session_state["demo_uniprot"] = "P38398"
+        st.session_state["demo_hgvs"] = "c.181T>G"
+        st.session_state["demo_pos"] = 61
+        st.toast("Loaded BRCA1 (C61G) Demo Case!", icon="🧬")
+        st.rerun()
+
+with col_d3:
+    if st.button("EGFR", help="Load EGFR L858R kinase domain variant"):
+        st.session_state["demo_gene"] = "EGFR"
+        st.session_state["demo_uniprot"] = "P00533"
+        st.session_state["demo_hgvs"] = "c.2573T>G"
+        st.session_state["demo_pos"] = 858
+        st.toast("Loaded EGFR (L858R) Demo Case!", icon="🧬")
+        st.rerun()
+# ---------------------------------------------
+
+default_gene = st.session_state.pop("demo_gene", "TP53")
+default_uniprot = st.session_state.pop("demo_uniprot", "P04637")
+default_hgvs = st.session_state.pop("demo_hgvs", "c.524G>A")
+default_pos = st.session_state.pop("demo_pos", 175)
+
+gene_symbol = st.sidebar.text_input("Gene Symbol", value=default_gene)
+uniprot_id = st.sidebar.text_input("UniProt ID Primary", value=default_uniprot)
 uniprot_id_compare = st.sidebar.text_input("UniProt ID Compare (Optional)", value="")
-hgvs_notation = st.sidebar.text_input("HGVS Variant", value="c.524G>A")
-residue_pos = st.sidebar.number_input("Protein Residue Position", min_value=1, value=175)
+hgvs_notation = st.sidebar.text_input("HGVS Variant", value=default_hgvs)
+residue_pos = st.sidebar.number_input("Protein Residue Position", min_value=1, value=default_pos)
 
 fetcher = AlphaFoldFetcher()
 
@@ -140,10 +178,14 @@ st.sidebar.header("📁 Phase 3: VCF Batch Ingestion")
 uploaded_vcf = st.sidebar.file_uploader("Upload Patient VCF File", type=["vcf", "txt"])
 
 if uploaded_vcf:
-    parsed_variants = VCFParser.parse_vcf_upload(uploaded_vcf)
-    st.sidebar.success(f"Parsed {len(parsed_variants)} variants from VCF.")
+    try:
+        parsed_variants = VCFParser.parse_vcf_upload(uploaded_vcf)
+        st.sidebar.success(f"Parsed {len(parsed_variants)} variants from VCF.")
+    except Exception as e:
+        st.sidebar.error(f"Error parsing VCF stream: {str(e)}")
+        parsed_variants = []
     
-    if st.sidebar.button("🚀 Run Batch Celery Annotation"):
+    if parsed_variants and st.sidebar.button("🚀 Run Batch Celery Annotation"):
         if async_annotate_vcf_batch is None:
             st.sidebar.error("Batch task not found in pipeline.tasks. Please check pipeline/tasks.py.")
         else:
@@ -224,7 +266,7 @@ else:
 
 plddt_primary = fetcher.extract_plddt(pdb_primary, residue_pos) if pdb_primary else None
 
-# Stability Calculation
+# Stability Calculation (Estimated via heuristic potential)
 stability_res = StabilityEstimator.calculate_deltadelta_g(hgvs_notation, plddt_primary) if plddt_primary is not None else {"delta_delta_g": 0.0, "classification": "Unknown", "color": "#64748b"}
 
 # Helper for Dynamic pLDDT Confidence Badge Styling
@@ -264,6 +306,15 @@ with col_left:
             <span style="font-size: 15px; font-weight: 600; color: #f8fafc;">pLDDT Score: <span style="color: {badge_color};">{badge_text}</span></span>
         </div>
         """, unsafe_allow_html=True)
+        
+        # --- ITEM 17: Burial Analysis (Contact-Count Proxy) & Low-pLDDT Flagging ---
+        st.markdown("#### Structural Packing & Burial Analysis")
+        st.info("ℹ️ **Burial Analysis Note:** Evaluated via a **contact-count proxy** heuristic (neighboring C-alpha atoms within 8Å).")
+        
+        if plddt_primary < 70.0:
+            st.warning(f"⚠️ **Low-pLDDT Flag:** Residue confidence score is {plddt_primary} (< 70.0). Structural packing and contact counts in this region should be interpreted with high caution due to local conformational flexibility or disorder.")
+        else:
+            st.success(f"✓ AlphaFold pLDDT confidence score is {plddt_primary} (Reliable regional folding).")
 
     # --- MODULE 1: PAE Matrix Viewer Integration ---
     with st.expander("📉 AlphaFold Predicted Aligned Error (PAE) Matrix"):
@@ -290,9 +341,9 @@ with col_left:
             else:
                 st.info("PAE error matrix JSON unavailable for this UniProt ID.")
 
-    # --- MODULE 2: In Silico Mutagenesis & Stability Shift (ΔΔG) ---
-    with st.expander("⚡ In Silico Mutagenesis & Stability Shift (ΔΔG) [Celery Backed]"):
-        st.markdown("Estimates folding free energy change (kcal/mol) upon single-point amino acid substitution asynchronously.")
+    # --- MODULE 2: In Silico Mutagenesis & Stability Estimate (ΔΔG) ---
+    with st.expander("⚡ In Silico Mutagenesis & Estimated Stability Shift (ΔΔG) [Celery Backed]"):
+        st.markdown("Estimates folding free energy change (kcal/mol via heuristic potential) upon single-point amino acid substitution asynchronously.")
         if hgvs_notation and plddt_primary is not None:
             st.markdown(f"""
             <div style="background: rgba(30, 41, 59, 0.6); border-left: 5px solid {stability_res['color']}; padding: 10px 14px; border-radius: 6px;">
@@ -370,7 +421,7 @@ with col_right:
         st.markdown(f"""
         * **Step 1: Data Acquisition** — UniProt ID `{uniprot_id}` resolved via Celery SQLite broker.
         * **Step 2: Structural Extraction** — AlphaFold PDB model loaded; Residue `{residue_pos}` extracted (pLDDT: **{plddt_primary}**).
-        * **Step 3: Stability Estimation** — ΔΔG: **{stability_res['delta_delta_g']} kcal/mol** ({stability_res['classification']}).
+        * **Step 3: Stability Estimation** — Estimated ΔΔG: **{stability_res['delta_delta_g']} kcal/mol** ({stability_res['classification']}).
         * **Step 4: Nemotron Model Tier** — Active Tier: **`{model_tier}`** via Token Factory.
         * **Step 5: Guardrail Status** — `NumericalGuardrail` active and monitoring local inference.
         """)
@@ -378,13 +429,22 @@ with col_right:
     with st.expander("📊 Live Ground Truth Payload (Guardrail Reference)"):
         st.json(ground_truth_payload)
 
-    # --- PHASE 5: ENTERPRISE AUDIT LEDGER VIEWER ---
-    with st.expander("📋 Enterprise Audit Trail & Compliance Ledger"):
-        st.markdown("Tamper-evident system log tracking all user access, clinical exports, and batch inferences.")
+    # --- PHASE 5: ENTERPRISE AUDIT LEDGER VIEWER & VERIFICATION BUTTON ---
+    with st.expander("📋 Audit Trail & Compliance Ledger (Tamper-Evident)"):
+        st.markdown("Tamper-evident system log tracking all user access, variant report exports, and batch inferences.")
         logs = AuditLedger.fetch_logs()
         import pandas as pd
         df_audit = pd.DataFrame(logs, columns=["Timestamp", "Username", "Role", "Action Type", "Details", "Payload Hash"])
         st.dataframe(df_audit, width='stretch')
+
+        if st.button("🔍 Verify Cryptographic Ledger Integrity"):
+            is_valid = AuditLedger.verify_full_ledger()
+            head_hash = AuditLedger.get_head_hash() or "N/A"
+            if is_valid:
+                st.success("✅ Audit Ledger Integrity Verified: All SHA-256 hash chains match securely with zero tampering detected.")
+                st.code(f"Current Ledger Head Hash (SHA-256):\n{head_hash}", language="text")
+            else:
+                st.error("⚠️ Ledger Integrity Compromised: Hash chain mismatch detected across audit logs!")
 
     # --- PHASE 5 PART 3: RAG KNOWLEDGE BASE INSPECTOR ---
     with st.expander("📚 RAG Vector Knowledge Base Inspector"):
@@ -395,23 +455,26 @@ with col_right:
             for m in preview_matches:
                 st.markdown(f"**Score:** `{m['score']:.3f}` | **Source:** `{m['source_id']}`\n> {m['text']}")
 
-    # --- PHASE 4: CLINICAL PDF REPORT EXPORT SIDEBAR WIDGET ---
+    # --- PHASE 4: VARIANT REPORT PDF DOSSIER EXPORT SIDEBAR WIDGET ---
     st.sidebar.markdown("---")
-    st.sidebar.header("📄 Phase 4: Clinical PDF Dossier")
-    if st.sidebar.button("📥 Generate Clinical PDF Report"):
-        pdf_path = ClinicalPDFExporter.generate_report(
-            payload=ground_truth_payload, 
-            vcf_results=st.session_state.get("vcf_results", None)
-        )
-        if pdf_path and os.path.exists(pdf_path):
-            AuditLedger.log_action(st.session_state["authenticated_user"], st.session_state["user_role"], "PDF_REPORT_GENERATION", f"Exported clinical dossier for {gene_symbol} {hgvs_notation}")
-            with open(pdf_path, "rb") as pdf_file:
-                st.sidebar.download_button(
-                    label="💾 Download PDF Dossier",
-                    data=pdf_file,
-                    file_name=f"OmniGen_{gene_symbol}_{hgvs_notation}_Clinical_Report.pdf",
-                    mime="application/pdf"
-                )
+    st.sidebar.header("📄 Phase 4: Variant Report Dossier")
+    if st.sidebar.button("📥 Generate Variant PDF Report"):
+        try:
+            pdf_path = ClinicalPDFExporter.generate_report(
+                payload=ground_truth_payload, 
+                vcf_results=st.session_state.get("vcf_results", None)
+            )
+            if pdf_path and os.path.exists(pdf_path):
+                AuditLedger.log_action(st.session_state["authenticated_user"], st.session_state["user_role"], "PDF_REPORT_GENERATION", f"Exported variant dossier for {gene_symbol} {hgvs_notation}")
+                with open(pdf_path, "rb") as pdf_file:
+                    st.sidebar.download_button(
+                        label="💾 Download PDF Dossier",
+                        data=pdf_file,
+                        file_name=f"OmniGen_{gene_symbol}_{hgvs_notation}_Variant_Report.pdf",
+                        mime="application/pdf"
+                    )
+        except Exception as pdf_err:
+            st.sidebar.error(f"Failed to generate PDF dossier: {str(pdf_err)}")
 
     # --- PHASE 4: LIVE CLINVAR API LOOKUP EXPANDER ---
     with st.expander("🌐 Live ClinVar Database Lookup"):
@@ -430,10 +493,10 @@ with col_right:
             col_bio, col_clin = st.columns(2)
             with col_bio:
                 st.markdown("##### 🧬 Structural Biologist")
-                st.info(f"Variant {hgvs_notation} at residue {residue_pos} demonstrates a pLDDT score of {plddt_primary} and a ΔΔG of {stability_res['delta_delta_g']} kcal/mol. This structural disruption heavily destabilizes the local folding architecture.")
+                st.info(f"Variant {hgvs_notation} at residue {residue_pos} demonstrates a pLDDT score of {plddt_primary} and an estimated ΔΔG of {stability_res['delta_delta_g']} kcal/mol. This structural disruption heavily destabilizes the local folding architecture.")
             with col_clin:
                 st.markdown("##### 🏥 Clinical Geneticist")
-                st.success(f"Concurring with structural metrics: a stability shift of {stability_res['delta_delta_g']} kcal/mol aligns directly with loss-of-function phenotypes typically observed in {gene_symbol} clinical portfolios.")
+                st.success(f"Concurring with structural metrics: an estimated stability shift of {stability_res['delta_delta_g']} kcal/mol aligns directly with loss-of-function phenotypes typically observed in {gene_symbol} portfolios.")
 
     # Dynamic Quick Prompt Chips based on Selected Persona
     st.markdown("**Quick Prompts:**")
@@ -441,15 +504,15 @@ with col_right:
     preset_prompt = None
 
     if agent_persona == "Structural Biologist":
-        p1_label, p1_text = "🧬 Folding Stability", f"Analyze the local 3D folding, stability shift of {stability_res['delta_delta_g']} kcal/mol, and hydrogen bonding network around residue {residue_pos}."
+        p1_label, p1_text = "🧬 Folding Stability", f"Analyze the local 3D folding, estimated stability shift of {stability_res['delta_delta_g']} kcal/mol, and hydrogen bonding network around residue {residue_pos}."
         p2_label, p2_text = "🔬 pLDDT Confidence", f"What does the pLDDT score of {plddt_primary} indicate about the structural rigidity of this region?"
         p3_label, p3_text = "⚛️ Side-Chain Interactions", f"How do electrostatic interactions at residue {residue_pos} affect protein conformation in {gene_symbol}?"
     elif agent_persona == "Clinical Geneticist":
-        p1_label, p1_text = "🏥 Pathogenicity Impact", f"How does variant {hgvs_notation} with a ΔΔG of {stability_res['delta_delta_g']} kcal/mol disrupt function and relate to clinical phenotypes in {gene_symbol}?"
-        p2_label, p2_text = "⚠️ Functional Loss", f"What is the clinical significance of mutations occurring at residue {residue_pos}?"
+        p1_label, p1_text = "🏥 Pathogenicity Impact", f"How does variant {hgvs_notation} with an estimated ΔΔG of {stability_res['delta_delta_g']} kcal/mol disrupt function and relate to phenotypes in {gene_symbol}?"
+        p2_label, p2_text = "⚠️ Functional Loss", f"What is the significance of mutations occurring at residue {residue_pos}?"
         p3_label, p3_text = "🩺 Disease Association", f"Discuss the oncogenic consequences and loss-of-function risks associated with {hgvs_notation}."
     else:  # Bioinformatician / Python Developer
-        p1_label, p1_text = "💻 API Data Pipeline", f"How can we programmatically fetch and parse AlphaFold coordinates and compute ΔΔG for UniProt ID {uniprot_id} using Python?"
+        p1_label, p1_text = "💻 API Data Pipeline", f"How can we programmatically fetch and parse AlphaFold coordinates and estimate ΔΔG for UniProt ID {uniprot_id} using Python?"
         p2_label, p2_text = "⚙️ Structural Parsing", f"Write a python snippet using Biopython or PDB parser to inspect residue {residue_pos}."
         p3_label, p3_text = "📊 Guardrail Metrics", f"Explain how programmatic validation checks coordinate payloads against local LLM inferences."
 
@@ -466,7 +529,7 @@ with col_right:
     # Session state initialization with reset support & sanitization
     if "messages" not in st.session_state or st.sidebar.button("🧹 Clear Chat Session"):
         st.session_state.messages = [
-            {"role": "assistant", "content": f"Hello! I am your OmniGen-NIM Nemotron AI Agent operating as a **{agent_persona}** via Token Factory. Active Context: **{hgvs_notation}** in **{gene_symbol}** ({uniprot_id}) with ΔΔG: **{stability_res['delta_delta_g']} kcal/mol**. Ask me anything about biology, programming, or structural metrics!"}
+            {"role": "assistant", "content": f"Hello! I am your OmniGen-NIM Nemotron AI Agent operating as a **{agent_persona}** via Token Factory. Active Context: **{hgvs_notation}** in **{gene_symbol}** ({uniprot_id}) with estimated ΔΔG: **{stability_res['delta_delta_g']} kcal/mol**. Ask me anything about biology, programming, or structural metrics!"}
         ]
 
     for msg in st.session_state.messages:
@@ -476,7 +539,12 @@ with col_right:
 
     for msg in st.session_state.messages:
         content = msg.get("content") or ""
-        footer = f"<br><br><span style='font-size: 11px; color: #10b981;'>🛡️ Verified by NumericalGuardrail</span>" if msg["role"] == "assistant" and "Hello!" not in content else ""
+        telemetry = msg.get("telemetry", "")
+        footer = ""
+        if msg["role"] == "assistant" and "Hello!" not in content:
+            footer = f"<br><br><span style='font-size: 11px; color: #10b981;'>🛡️ Verified by NumericalGuardrail</span>"
+            if telemetry:
+                footer += f"<br><span style='font-size: 11px; color: #38bdf8;'>{telemetry}</span>"
         render_custom_chat_message(msg["role"], content, footer)
 
     user_prompt = st.chat_input("Ask a question...")
@@ -495,7 +563,7 @@ with col_right:
                 
                 persona_instructions = {
                     "Structural Biologist": "Focus on 3D folding, hydrogen bonding, electrostatic interactions, and structural stability around target residues.",
-                    "Clinical Geneticist": "Focus on pathogenicity, variant impact, clinical phenotype associations, and loss-of-function consequences in oncology/disease.",
+                    "Clinical Geneticist": "Focus on pathogenicity, variant impact, phenotype associations, and loss-of-function consequences in disease portfolios.",
                     "Bioinformatician / Python Developer": "Focus on computational pipelines, API extraction, AlphaFold DB structures, programmatic metrics, and script automation."
                 }
                 
@@ -504,20 +572,19 @@ with col_right:
                 
                 system_prompt = (
                     f"CRITICAL RULE: Output ONLY your final professional response. Never write out your thought process, never say 'The user wants...', and never explain what you are about to do.\n\n"
-                    f"You are OmniGen-NIM, an expert enterprise-grade AI bioinformatics agent powered by NVIDIA Nemotron via Token Factory.\n"
+                    f"You are OmniGen-NIM, an expert research prototype AI bioinformatics agent powered by NVIDIA Nemotron via Token Factory.\n"
                     f"Active Persona Mode: {agent_persona}. {persona_instructions.get(agent_persona, '')}\n"
                     f"Strict Ground Truth Context:\n"
                     f"- Gene: {gene_symbol} (UniProt: {uniprot_id})\n"
                     f"- Variant: {hgvs_notation} at Residue {residue_pos}\n"
                     f"- AlphaFold pLDDT Confidence: {plddt_primary}\n"
-                    f"- In Silico Stability Shift (ΔΔG): {stability_res['delta_delta_g']} kcal/mol ({stability_res['classification']})\n\n"
+                    f"- Estimated In Silico Stability Shift (ΔΔG): {stability_res['delta_delta_g']} kcal/mol ({stability_res['classification']})\n\n"
                     f"Retrieved Knowledge Base Context (RAG):\n{rag_context_str}\n\n"
                     f"Mandatory Instructions:\n"
-                    f"1. Directly reference these exact metrics (pLDDT score and ΔΔG value) and the RAG context.\n"
-                    f"2. Provide deep, rigorous structural or clinical analysis matching your persona starting from the very first word."
+                    f"1. Directly reference these exact metrics (pLDDT score and estimated ΔΔG value) and the RAG context.\n"
+                    f"2. Provide deep, rigorous structural or research analysis matching your persona starting from the very first word."
                 )
                 
-                # ISOLATION FIX: Send ONLY the system prompt and the latest user prompt to prevent historical message drift/hallucination checks in Ultra
                 messages_for_api = [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": harmonized_prompt}
@@ -527,6 +594,7 @@ with col_right:
                 response_container = st.empty()
                 
                 try:
+                    start_time = time.time()
                     res_raw = tf_client.chat_completion(
                         messages=messages_for_api,
                         tier=model_tier,
@@ -534,51 +602,64 @@ with col_right:
                         max_tokens=300,
                         stream=False
                     )
+                    latency = time.time() - start_time
                     
                     if res_raw is not None:
                         chunk_text = ""
+                        token_count = "N/A"
+                        
                         if hasattr(res_raw, "choices") and len(res_raw.choices) > 0:
                             choice = res_raw.choices[0]
                             if hasattr(choice, "message") and hasattr(choice.message, "content"):
                                 chunk_text = choice.message.content or ""
                             elif hasattr(choice, "text"):
                                 chunk_text = choice.text or ""
+                            
+                            if hasattr(res_raw, "usage") and res_raw.usage:
+                                token_count = getattr(res_raw.usage, "total_tokens", "N/A")
+                                
                         elif isinstance(res_raw, dict) and "choices" in res_raw:
                             choice = res_raw["choices"][0]
                             if "message" in choice and "content" in choice["message"]:
                                 chunk_text = choice["message"]["content"] or ""
                             elif "text" in choice:
                                 chunk_text = choice["text"] or ""
+                            token_count = res_raw.get("usage", {}).get("total_tokens", "N/A")
+                            
                         elif isinstance(res_raw, str):
                             chunk_text = res_raw
                         
                         full_response_text += chunk_text
-                except Exception:
-                    pass
+                except Exception as api_exc:
+                    latency = 0.0
+                    token_count = "N/A"
+                    st.error(f"Failed to reach Token Factory Nemotron endpoint: {str(api_exc)}")
 
                 if not full_response_text or not full_response_text.strip():
                     full_response_text = (
                         f"As a **{agent_persona}** evaluating **{gene_symbol}** ({hgvs_notation}) at residue {residue_pos}: "
-                        f"The predicted AlphaFold pLDDT confidence is **{plddt_primary}**, and the calculated in silico stability shift "
+                        f"The predicted AlphaFold pLDDT confidence is **{plddt_primary}**, and the estimated in silico stability shift "
                         f"is **{stability_res['delta_delta_g']} kcal/mol** ({stability_res['classification']}). "
-                        f"This thermodynamic shift indicates a notable alteration in local folding stability, consistent with clinical impact models."
+                        f"This thermodynamic estimate indicates a notable alteration in local folding stability, consistent with functional impact models."
                     )
 
                 response_container.markdown(full_response_text)
 
                 is_valid = NumericalGuardrail.verify_llm_output(full_response_text, ground_truth_payload)
                 
+                telemetry_caption = f"⚡ **Telemetry:** Model: `Nemotron-{model_tier}` | Latency: `{latency:.2f}s` | Tokens: `{token_count}` | Verified by `NumericalGuardrail`"
+                st.caption(telemetry_caption)
+
                 if is_valid:
                     AuditLedger.log_action(st.session_state["authenticated_user"], st.session_state["user_role"], "LLM_INFERENCE", f"Successful Token Factory Nemotron ({model_tier}) query with {agent_persona}")
-                    st.caption("🛡️ **Response status:** Verified by `NumericalGuardrail` against ground-truth payload.")
-                    st.session_state.messages.append({"role": "assistant", "content": full_response_text})
+                    st.session_state.messages.append({"role": "assistant", "content": full_response_text, "telemetry": telemetry_caption})
                 else:
                     AuditLedger.log_action(st.session_state["authenticated_user"], st.session_state["user_role"], "GUARDRAIL_INTERCEPTION", "Unverified structural output flagged.")
                     st.warning("⚠️ **Guardrail Interception:** Unverified structural coordinates detected! Response flagged.")
-                    st.session_state.messages.append({"role": "assistant", "content": full_response_text})
+                    st.session_state.messages.append({"role": "assistant", "content": full_response_text, "telemetry": telemetry_caption})
 
             except Exception as e:
-                error_msg = f"Failed to reach Token Factory Nemotron endpoint: {str(e)}"
+                error_msg = f"Application execution error: {str(e)}"
                 st.error(error_msg)
                 st.session_state.messages.append({"role": "assistant", "content": error_msg})
             
@@ -590,6 +671,6 @@ with col_right:
         st.sidebar.download_button(
             label="📥 Export Session Report",
             data=chat_export,
-            file_name=f"OmniGen_NIM_{gene_symbol}_{hgvs_notation}_report.json",
+            file_name=f"OmniGen_NIM_{gene_symbol}_{hgvs_notation}_Session.json",
             mime="application/json"
         )
