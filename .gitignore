@@ -1,14 +1,33 @@
 # Environments
 env/
 venv/
+venv_clean/
 *.env
+!.env.example
 
 # Cache files
 __pycache__/
 *.pyc
+*.py[cod]
+*$py.class
 data/alphafold_cache/
+.cache/
+
+# Databases & Audit Logs
+*.sqlite
+*.sqlite3
+*.db
+celery_sqlite.db
+audit_ledger.db
+/tmp/celery_sqlite.db
+
+# Celery & Background Artefacts
+celerybeat-schedule
+celerybeat.pid
 
 # System / IDE files
 .DS_Store
 .vscode/
 .idea/
+*.swp
+*.swo
