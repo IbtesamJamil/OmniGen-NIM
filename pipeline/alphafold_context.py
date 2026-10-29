@@ -59,6 +59,24 @@ class AlphaFoldFetcher:
                     continue
         return None
 
+    def fetch_pae_json(self, uniprot_id: str):
+        """Fetches the Predicted Aligned Error (PAE) JSON data from AlphaFold DB."""
+        uniprot_id = uniprot_id.upper()
+        try:
+            summary_url = f"https://alphafold.ebi.ac.uk/api/prediction/{uniprot_id}"
+            res = requests.get(summary_url, timeout=10)
+            if res.status_code == 200:
+                data = res.json()
+                if data and len(data) > 0:
+                    pae_json_url = data[0].get("paeDocUrl")
+                    if pae_json_url:
+                        json_res = requests.get(pae_json_url, timeout=15)
+                        if json_res.status_code == 200:
+                            return json_res.json()
+        except Exception as e:
+            print(f"Error fetching PAE matrix: {e}")
+        return None
+
 
 if __name__ == "__main__":
     fetcher = AlphaFoldFetcher()

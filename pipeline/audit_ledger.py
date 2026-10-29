@@ -1,0 +1,77 @@
+import sqlite3
+import hashlib
+import datetime
+import os
+
+DB_PATH = "omnisecure_audit.db"
+
+class AuditLedger:
+    @staticmethod
+    def initialize_db():
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT,
+                username TEXT,
+                role TEXT,
+                action_type TEXT,
+                details TEXT,
+                payload_hash TEXT
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                username TEXT PRIMARY KEY,
+                password_hash TEXT,
+                role TEXT
+            )
+        """)
+        
+        # Always ensure ibtesam and fariz exist with correct roles & password hash
+        shared_pass_hash = hashlib.sha256("clinician123".encode()).hexdigest()
+        cursor.execute("INSERT OR REPLACE INTO users VALUES (?, ?, ?)", 
+                       ("ibtesam", shared_pass_hash, "Clinical Geneticist"))
+        cursor.execute("INSERT OR REPLACE INTO users VALUES (?, ?, ?)", 
+                       ("fariz", shared_pass_hash, "Bioinformatician"))
+            
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def verify_user(username, password):
+        AuditLedger.initialize_db()
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        pass_hash = hashlib.sha256(password.encode()).hexdigest()
+        cursor.execute("SELECT role FROM users WHERE username = ? AND password_hash = ?", (username, pass_hash))
+        res = cursor.fetchone()
+        conn.close()
+        return res[0] if res else None
+
+    @staticmethod
+    def log_action(username, role, action_type, details):
+        AuditLedger.initialize_db()
+        timestamp = datetime.datetime.now().isoformat()
+        raw_string = f"{timestamp}-{username}-{action_type}-{details}"
+        payload_hash = hashlib.sha256(raw_string.encode()).hexdigest()
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO audit_logs (timestamp, username, role, action_type, details, payload_hash)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (timestamp, username, role, action_type, details, payload_hash))
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def fetch_logs():
+        AuditLedger.initialize_db()
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT timestamp, username, role, action_type, details, payload_hash FROM audit_logs ORDER BY id DESC")
+        rows = cursor.fetchall()
+        conn.close()
+        return rows

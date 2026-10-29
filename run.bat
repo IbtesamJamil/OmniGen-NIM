@@ -1,17 +1,25 @@
 @echo off
-TITLE OmniGen-NIM Launcher
+TITLE OmniGen-NIM Master Launcher
+:: Switch to the D drive and navigate to project root
+D:
+cd /d D:\OmniGen-NIM
 
-echo [1/2] Checking Local Ollama Server...
-netstat -ano | findstr :11434 >nul
-if %errorlevel% equ 0 (
-    echo Ollama is already active in the background.
-) else (
-    echo Starting Ollama Server...
-    start /b ollama serve >nul 2>&1
-    timeout /t 3 /nobreak > nul
-)
+:: Activate the clean virtual environment
+call venv_clean\Scripts\activate
 
+echo ===================================================
+echo   Starting OmniGen-NIM Bioinformatics Platform
+echo ===================================================
+
+:: Launch the Celery background worker in a separate window using the solo pool
+echo [1/2] Launching Celery background worker (Solo Pool)...
+start cmd /k "TITLE Celery Worker & D: && cd /d D:\OmniGen-NIM && venv_clean\Scripts\activate && celery -A pipeline.celery_app worker --loglevel=info -P solo"
+
+:: Brief pause to let the worker establish its SQLite connection
+timeout /t 2 >nul
+
+:: Launch the Streamlit dashboard in the primary window
 echo [2/2] Launching Streamlit Dashboard...
-cd /d "%~dp0"
-"D:\Miniconda\python.exe" -m streamlit run app\dashboard.py
+streamlit run app/dashboard.py
+
 pause

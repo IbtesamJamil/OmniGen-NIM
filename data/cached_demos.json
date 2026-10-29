@@ -1,0 +1,28 @@
+{
+  "demo_cases": [
+    {
+      "id": "case_tp53_r175h",
+      "gene": "TP53",
+      "hgvs": "ENST00000269305.4:c.524G>A",
+      "protein_change": "p.Arg175His",
+      "domain": "DNA-binding domain",
+      "residue_number": 175,
+      "stability_proxy_delta_g": 2.45,
+      "plddt_score": 92.1,
+      "classification": "Pathogenic",
+      "audit_id": "genesis_hash_tp53_175"
+    },
+    {
+      "id": "case_braf_v600e",
+      "gene": "BRAF",
+      "hgvs": "ENST00000288602.6:c.1799T>A",
+      "protein_change": "p.Val600Glu",
+      "domain": "Kinase domain",
+      "residue_number": 600,
+      "stability_proxy_delta_g": 1.85,
+      "plddt_score": 88.4,
+      "classification": "Pathogenic",
+      "audit_id": "genesis_hash_braf_600"
+    }
+  ]
+}
