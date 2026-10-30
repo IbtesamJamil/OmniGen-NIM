@@ -4,6 +4,7 @@ import py3Dmol
 import sys
 import json
 import time
+import hashlib
 from dotenv import load_dotenv
 
 # Load secure environment variables from .env in the project root
@@ -40,7 +41,7 @@ from pipeline.vcf_parser import VCFParser
 
 st.set_page_config(page_title="OmniGen-NIM | Guarded Agentic Genomic Platform", page_icon="🧬", layout="wide")
 
-# --- ENTERPRISE RBAC LOGIN GATEWAY (RESTRICTED TO IBTESAM & FARIZ) ---
+# --- ENTERPRISE RBAC LOGIN GATEWAY & JUDGE DEMO MODE ---
 AuditLedger.initialize_db()
 if "authenticated_user" not in st.session_state:
     st.session_state["authenticated_user"] = None
@@ -48,25 +49,58 @@ if "authenticated_user" not in st.session_state:
 
 if not st.session_state["authenticated_user"]:
     st.markdown("## 🔐 OmniGen-NIM Secure Authentication Portal")
-    st.caption("Secure access portal restricted to authorized personnel (`ibtesam` / `fariz`).")
+    st.caption("Secure access portal restricted to authorized personnel (`ibtesam` / `fariz`) or instant evaluator demo mode.")
     
-    col_login1, col_login2 = st.columns([1, 2])
+    col_login1, col_login2 = st.columns(2, gap="large")
+    
+    # Secure Password Hash verification for ibtesam (clinician123 hash or matching credentials)
+    VALID_USER_HASH = hashlib.sha256("clinician123".encode()).hexdigest()
+    
     with col_login1:
+        st.subheader("🔑 Authorized Personnel Login")
         login_user = st.text_input("Username", value="ibtesam")
         login_pass = st.text_input("Password", type="password", value="clinician123")
-        if st.button("Authenticate Session"):
+        if st.button("Authenticate Session", use_container_width=True):
+            pass_hash = hashlib.sha256(login_pass.encode()).hexdigest()
             role = AuditLedger.verify_user(login_user, login_pass)
-            if role:
+            if role or (login_user == "ibtesam" and pass_hash == VALID_USER_HASH):
+                resolved_role = role if role else "Clinical Geneticist"
                 st.session_state["authenticated_user"] = login_user
-                st.session_state["user_role"] = role
-                AuditLedger.log_action(login_user, role, "USER_LOGIN", "Successful secure portal login.")
+                st.session_state["user_role"] = resolved_role
+                AuditLedger.log_action(login_user, resolved_role, "USER_LOGIN", "Successful secure portal login.")
                 st.rerun()
             else:
                 st.error("Invalid credentials. Authorized accounts: ibtesam (Clinical Geneticist) or fariz (Bioinformatician)")
+                
+    with col_login2:
+        st.subheader("⚡ Judge & Evaluator Access")
+        st.markdown("Evaluating this research prototype for Devpost or review? Bypass authentication instantly with cached workspace state.")
+        st.write("")
+        if st.button("🚀 Try Demo Mode (Instant Judge Access)", type="secondary", use_container_width=True):
+            st.session_state["authenticated_user"] = "Guest Evaluator"
+            st.session_state["user_role"] = "Guest Evaluator (Demo Mode)"
+            st.session_state["gene_symbol"] = "TP53"
+            st.session_state["uniprot_id"] = "P04637"
+            st.session_state["hgvs_notation"] = "c.743G>A"
+            st.session_state["residue_pos"] = 248
+            AuditLedger.log_action("Guest Evaluator", "Guest Evaluator (Demo Mode)", "DEMO_MODE_ACCESS", "Instant judge session launched.")
+            st.success("Demo mode activated! Launching dashboard...")
+            st.rerun()
+            
     st.stop()
 
 st.title("🧬 OmniGen-NIM: Guarded Agentic Genomic Analysis Platform")
 st.caption("Research prototype combining AlphaFold 3D structure analytics, VCF pathogenicity scoring, RAG literature grounding, and Token Factory Nemotron guardrails.")
+
+# --- INITIALIZE SESSION STATE FOR TARGET VARIANT (PREVENTS RESET BUG) ---
+if "gene_symbol" not in st.session_state:
+    st.session_state["gene_symbol"] = "TP53"
+if "uniprot_id" not in st.session_state:
+    st.session_state["uniprot_id"] = "P04637"
+if "hgvs_notation" not in st.session_state:
+    st.session_state["hgvs_notation"] = "c.743G>A"
+if "residue_pos" not in st.session_state:
+    st.session_state["residue_pos"] = 248
 
 # --- SIDEBAR CONFIGURATION ---
 st.sidebar.markdown(f"👤 **User:** `{st.session_state['authenticated_user']}`")
@@ -92,48 +126,43 @@ agent_persona = st.sidebar.selectbox(
 st.sidebar.markdown("---")
 st.sidebar.header("🔬 Target Variant Context")
 
-# --- POLISHED ONE-CLICK DEMO CASES (ITEM 18) ---
+# --- POLISHED ONE-CLICK DEMO CASES (PERSISTENT STATE) ---
 st.sidebar.markdown("### 🎯 One-Click Demo Cases")
 col_d1, col_d2, col_d3 = st.sidebar.columns(3)
 
 with col_d1:
     if st.button("TP53", help="Load TP53 R248W hotspot cancer variant"):
-        st.session_state["demo_gene"] = "TP53"
-        st.session_state["demo_uniprot"] = "P04637"
-        st.session_state["demo_hgvs"] = "c.743G>A"
-        st.session_state["demo_pos"] = 248
+        st.session_state["gene_symbol"] = "TP53"
+        st.session_state["uniprot_id"] = "P04637"
+        st.session_state["hgvs_notation"] = "c.743G>A"
+        st.session_state["residue_pos"] = 248
         st.toast("Loaded TP53 (R248W) Demo Case!", icon="🧬")
         st.rerun()
 
 with col_d2:
     if st.button("BRCA1", help="Load BRCA1 C61G ring-domain variant"):
-        st.session_state["demo_gene"] = "BRCA1"
-        st.session_state["demo_uniprot"] = "P38398"
-        st.session_state["demo_hgvs"] = "c.181T>G"
-        st.session_state["demo_pos"] = 61
+        st.session_state["gene_symbol"] = "BRCA1"
+        st.session_state["uniprot_id"] = "P38398"
+        st.session_state["hgvs_notation"] = "c.181T>G"
+        st.session_state["residue_pos"] = 61
         st.toast("Loaded BRCA1 (C61G) Demo Case!", icon="🧬")
         st.rerun()
 
 with col_d3:
     if st.button("EGFR", help="Load EGFR L858R kinase domain variant"):
-        st.session_state["demo_gene"] = "EGFR"
-        st.session_state["demo_uniprot"] = "P00533"
-        st.session_state["demo_hgvs"] = "c.2573T>G"
-        st.session_state["demo_pos"] = 858
+        st.session_state["gene_symbol"] = "EGFR"
+        st.session_state["uniprot_id"] = "P00533"
+        st.session_state["hgvs_notation"] = "c.2573T>G"
+        st.session_state["residue_pos"] = 858
         st.toast("Loaded EGFR (L858R) Demo Case!", icon="🧬")
         st.rerun()
 # ---------------------------------------------
 
-default_gene = st.session_state.pop("demo_gene", "TP53")
-default_uniprot = st.session_state.pop("demo_uniprot", "P04637")
-default_hgvs = st.session_state.pop("demo_hgvs", "c.524G>A")
-default_pos = st.session_state.pop("demo_pos", 175)
-
-gene_symbol = st.sidebar.text_input("Gene Symbol", value=default_gene)
-uniprot_id = st.sidebar.text_input("UniProt ID Primary", value=default_uniprot)
+gene_symbol = st.sidebar.text_input("Gene Symbol", value=st.session_state["gene_symbol"], key="gene_symbol")
+uniprot_id = st.sidebar.text_input("UniProt ID Primary", value=st.session_state["uniprot_id"], key="uniprot_id")
 uniprot_id_compare = st.sidebar.text_input("UniProt ID Compare (Optional)", value="")
-hgvs_notation = st.sidebar.text_input("HGVS Variant", value=default_hgvs)
-residue_pos = st.sidebar.number_input("Protein Residue Position", min_value=1, value=default_pos)
+hgvs_notation = st.sidebar.text_input("HGVS Variant", value=st.session_state["hgvs_notation"], key="hgvs_notation")
+residue_pos = st.sidebar.number_input("Protein Residue Position", min_value=1, value=st.session_state["residue_pos"], key="residue_pos")
 
 fetcher = AlphaFoldFetcher()
 
